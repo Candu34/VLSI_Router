@@ -8,7 +8,7 @@ Proiect de verificare pentru un router de pachete multi-port, implementat în **
 
 ## Descriere generală
 
-Router-ul primește pachete de **32 de biți** prin interfața de intrare și le direcționează către unul dintre cele 4 canale de ieșire, în funcție de adresa de destinație. Fiecare canal are propriul FIFO și propriul controler UART TX. Interfața APB permite configurarea baudrate-ului UART și citirea registrelor de stare și a contoarelor interne. :contentReference[oaicite:1]{index=1}
+Router-ul primește pachete de **32 de biți** prin interfața de intrare și le direcționează către unul dintre cele 4 canale de ieșire, în funcție de adresa de destinație. Fiecare canal are propriul FIFO și propriul controler UART TX. Interfața APB permite configurarea baudrate-ului UART și citirea registrelor de stare și a contoarelor interne. 
 
 ## Structura pachetului
 
@@ -21,7 +21,7 @@ Pachetul de intrare are 32 de biți și următoarea structură:
 - **[19:16]** – număr de secvență
 - **[15:0]** – payload
 
-Destinațiile valide sunt **0–3**. Orice destinație mai mare decât 3 duce la eliminarea pachetului și incrementarea contorului de pachete eliminate. :contentReference[oaicite:2]{index=2}
+Destinațiile valide sunt **0–3**. Orice destinație mai mare decât 3 duce la eliminarea pachetului și incrementarea contorului de pachete eliminate. 
 
 ## Arhitectura proiectului
 
@@ -30,7 +30,7 @@ Destinațiile valide sunt **0–3**. Orice destinație mai mare decât 3 duce la
 - `router.sv` – modul top-level; integrează APB, parserul de pachete, FIFO-urile, FSM-urile TX și instanțele UART
 - `fifo_memory.sv` – memorie FIFO parametrizabilă
 - `uart.sv` – modul UART cu transmisie TX și baudrate configurabil
-- `tb/` – director pentru testbench și mediul de verificare :contentReference[oaicite:3]{index=3}
+- `tb/` – director pentru testbench și mediul de verificare 
 
 ### Blocuri funcționale din DUT
 
@@ -41,7 +41,7 @@ Destinațiile valide sunt **0–3**. Orice destinație mai mare decât 3 duce la
 - contor pachete eliminate
 - logică `ack_o`
 - 4 FSM-uri TX, câte unul per canal
-- registru de status FIFO :contentReference[oaicite:4]{index=4}
+- registru de status FIFO 
 
 ## Interfețe
 
@@ -65,7 +65,7 @@ Destinațiile valide sunt **0–3**. Orice destinație mai mare decât 3 duce la
 - `ack_o`
 
 ### Interfața UART
-- `uart_tx_o[3:0]` – 4 ieșiri TX, câte una pentru fiecare port valid :contentReference[oaicite:5]{index=5}
+- `uart_tx_o[3:0]` – 4 ieșiri TX, câte una pentru fiecare port valid 
 
 ## Funcționalități implementate
 
@@ -77,7 +77,7 @@ Destinațiile valide sunt **0–3**. Orice destinație mai mare decât 3 duce la
 - transmisie serială prin 4 canale UART TX
 - configurare baudrate prin APB
 - citire status și contoare prin APB
-- reset asincron pentru registre, FIFO-uri și FSM-uri :contentReference[oaicite:6]{index=6}
+- reset asincron pentru registre, FIFO-uri și FSM-uri 
 
 ## Parametri locali
 
@@ -88,7 +88,7 @@ Destinațiile valide sunt **0–3**. Orice destinație mai mare decât 3 duce la
 - `FIFO_SIZE = 8`
 - `FIFO_WIDTH = 32`
 
-Aceste valori definesc numărul de regiștri APB, numărul de FIFO-uri, capacitatea fiecărui FIFO și lățimea datelor stocate. :contentReference[oaicite:7]{index=7}
+Aceste valori definesc numărul de regiștri APB, numărul de FIFO-uri, capacitatea fiecărui FIFO și lățimea datelor stocate. 
 
 ## Harta registrelor APB
 
@@ -101,25 +101,25 @@ Aceste valori definesc numărul de regiștri APB, numărul de FIFO-uri, capacita
 | `0x04` | `PKT_SKIP_CNT`   | R     | contor pachete eliminate |
 | `0x05` | `STATUS`         | R     | biți FULL/EMPTY pentru FIFO-uri |
 
-Registrul `STATUS` codifică starea FIFO-urilor pe biți, câte 2 biți per FIFO. :contentReference[oaicite:8]{index=8}
+Registrul `STATUS` codifică starea FIFO-urilor pe biți, câte 2 biți per FIFO. 
 
 ## Protocol de funcționare
 
 ### Req/Ack
-Inițiatorul pune un pachet valid pe `data_in` și ridică `req_i`. Router-ul răspunde cu `ack_o` pentru un tact. Dacă destinația este validă și FIFO-ul nu este plin, pachetul este înscris. Dacă nu, este eliminat și incrementat `PKT_SKIP_CNT`. :contentReference[oaicite:9]{index=9}
+Inițiatorul pune un pachet valid pe `data_in` și ridică `req_i`. Router-ul răspunde cu `ack_o` pentru un tact. Dacă destinația este validă și FIFO-ul nu este plin, pachetul este înscris. Dacă nu, este eliminat și incrementat `PKT_SKIP_CNT`. 
 
 ### APB
 Transferurile respectă fazele:
 - **SETUP**: `psel=1`, `penable=0`
 - **ACCESS**: `psel=1`, `penable=1`
 
-Interfața APB este folosită pentru configurarea router-ului și citirea registrelor interne. :contentReference[oaicite:10]{index=10}
+Interfața APB este folosită pentru configurarea router-ului și citirea registrelor interne.
 
 ### UART
 Fiecare canal de ieșire are propriul controler UART TX. Modulul UART implementează transmisie serială asincronă și suportă:
 - lungimi de date configurabile: 8/16/32/64 biți
 - transmisie LSB-first sau MSB-first
-- baudrate configurabil prin APB :contentReference[oaicite:11]{index=11}
+- baudrate configurabil prin APB 
 
 ## Verificare
 
@@ -130,7 +130,7 @@ Mediul de verificare include:
 - monitoare pentru fiecare interfață
 - scoreboard / model de referință
 - colectori de coverage
-- checkere și aserțiuni funcționale :contentReference[oaicite:12]{index=12}
+- checkere și aserțiuni funcționale 
 
 ### Exemple de checkere
 - `route_check`
@@ -143,7 +143,7 @@ Mediul de verificare include:
 - `fifo_status_check`
 - `fifo_order_check`
 - `uart_tx_data_check`
-- `reset_check` :contentReference[oaicite:13]{index=13}
+- `reset_check` 
 
 ### Exemple de teste
 - `apb_wr_baud_test`
@@ -166,7 +166,7 @@ Mediul de verificare include:
 - `baud_change_during_tx_test`
 - `multi_port_concurrent_test`
 - `random_directed_test`
-- `random_stress_test` :contentReference[oaicite:14]{index=14}
+- `random_stress_test` 
 
 ## Limitări cunoscute
 
@@ -175,7 +175,7 @@ Mediul de verificare include:
 - contoarele APB sunt pe 8 biți și fac wrap-around după 255
 - câmpul de prioritate există în pachet, dar nu este încă folosit pentru arbitrare
 - `ack_o` poate fi afirmat chiar dacă pachetul este eliminat
-- UART-ul implementat este doar TX, fără RX :contentReference[oaicite:15]{index=15}
+- UART-ul implementat este doar TX, fără RX 
 
 ## Direcții viitoare
 
@@ -185,7 +185,7 @@ Mediul de verificare include:
 - implementarea unei căi UART RX
 - adăugarea unui mecanism CRC
 - verificare formală cu proprietăți SVA
-- extinderea la mai multe porturi prin parametrizare completă :contentReference[oaicite:16]{index=16}
+- extinderea la mai multe porturi prin parametrizare completă 
 
 ## Autori
 
@@ -195,4 +195,4 @@ Mediul de verificare include:
 ## Resurse
 
 - **GitHub:** `https://github.com/Candu34/VLSI_Router`
-- **EDA Playground:** `https://edaplayground.com/x/6mcW` :contentReference[oaicite:17]{index=17}
+- **EDA Playground:** `https://edaplayground.com/x/6mcW` 
