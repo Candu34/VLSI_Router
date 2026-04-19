@@ -1,0 +1,15 @@
+# Fisiere specifice
+APB.v
+
+# Extensii generate
+*.vcd
+*.vstf
+*.wlf
+
+# Director work
+work/
+
+# Alte fisiere
+wlfmdj4bb
+wlfmracj56
+wlftv0d14b
