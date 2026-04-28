@@ -8,51 +8,51 @@ class coverage_apb extends uvm_component;
 
   `uvm_component_utils(coverage_apb)
 
-  monitor_apb p_monitor;
+  // tranzactia curenta, populata inainte de sample()
+  tranzactie_apb tranzactie_curenta;
 
   covergroup stari_apb_cg;
     option.per_instance = 1;
 
-    // Adrese APB relevante pentru router
-    cp_addr : coverpoint p_monitor.starea_preluata_a_apb.addr {
-      bins ctrl_reg         = {8'h00};
-      bins baud_reg         = {8'h01};
-      bins cfg_reg          = {8'h02};
-      bins pkt_counter_reg  = {8'h03};
-      bins pkt_skipped_reg  = {8'h04};
-      bins status_reg       = {8'h05};
-      bins invalid_addr     = {[8'h06:8'hFF]};
+    cp_addr : coverpoint tranzactie_curenta.addr {
+      bins ctrl_reg        = {8'h00};
+      bins baud_reg        = {8'h01};
+      bins cfg_reg         = {8'h02};
+      bins pkt_counter_reg = {8'h03};
+      bins pkt_skipped_reg = {8'h04};
+      bins status_reg      = {8'h05};
+      bins invalid_addr    = {[8'h06:8'hFF]};
     }
 
-    // Read / Write
-    cp_write : coverpoint p_monitor.starea_preluata_a_apb.write {
+    cp_write : coverpoint tranzactie_curenta.write {
       bins read_op  = {0};
       bins write_op = {1};
     }
 
-    // Error observat pe interfata
-    cp_error : coverpoint p_monitor.starea_preluata_a_apb.error {
+    cp_error : coverpoint tranzactie_curenta.error {
       bins no_error = {0};
       bins err      = {1};
     }
 
-    // Ready observat
-    cp_ready : coverpoint p_monitor.starea_preluata_a_apb.ready {
+    cp_ready : coverpoint tranzactie_curenta.ready {
       bins not_ready = {0};
       bins ready_ok  = {1};
     }
 
-    // Cross util: pe ce adrese apar erori
     cross_addr_error : cross cp_addr, cp_error;
-
-    // Cross util: read/write pe fiecare tip de adresa
     cross_addr_write : cross cp_addr, cp_write;
   endgroup
 
-  function new(string name, uvm_component parent);
+  function new(string name = "coverage_apb", uvm_component parent = null);
     super.new(name, parent);
-    $cast(p_monitor, parent);
+    tranzactie_curenta = new("tranzactie_curenta_cov");
     stari_apb_cg = new();
+  endfunction
+
+  // apelata din monitor cu tranzactia completa
+  function void sample_coverage(tranzactie_apb tr);
+    tranzactie_curenta = tr;
+    stari_apb_cg.sample();
   endfunction
 
 endclass
