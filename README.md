@@ -1,5 +1,7 @@
 # Router APB Multi-Port în SystemVerilog
 
+- locație Edaplayground: https://edaplayground.com/x/6mcW
+
 Proiect de verificare pentru un router de pachete multi-port, implementat în **SystemVerilog**, cu:
 - interfață **APB** pentru configurare și monitorizare,
 - interfață **Req/Ack** pentru recepția pachetelor,
