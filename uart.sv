@@ -56,7 +56,7 @@ reg [3-1:0]		cfg;				//#0 addr
 
 
 
-reg [3-1:0]	baud;				//#1 store the number of clocks per bit
+reg [8-1:0]			baud;		    //#1 store the number of clocks per bit
  
 reg [64-1:0]		tx_data;		//#2 addr
 	
@@ -92,9 +92,9 @@ always @(posedge clk_i or negedge rst_n_i)
 			
 //Write baud register
 always @(posedge clk_i or negedge rst_n_i)
-	if (~rst_n_i) baud <= 3'b110; else
+	if (~rst_n_i) baud <= 8'b0000_0110; else // default 6 clocks per bit
 		if (req_i && cnt == 0 && div_cnt == 0 && addr_i == 1)
-			baud <= data_i[2:0]; else
+			baud <= data_i[8-1:0]; else
 				baud <= baud;
 
 

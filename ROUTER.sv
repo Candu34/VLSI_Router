@@ -19,26 +19,20 @@
 
     module router (
         // APB Interface
-        input                       clk_i       ,
-        input                       rst_n_i     ,
+        input                           clk_i       ,
+        input                           rst_n_i     ,
 
-        input                       pr_w_i      ,
-        input                       penable_i   ,
-        input  [7:0]                pwdata_i    ,
-        input  [7:0]                paddr_i     ,
-        input                       psel_i      ,
-        output reg [7:0]            prdata_o    ,
-        output reg                  p_error_o   ,
-        output reg                  p_ready_o   ,
+        input                           pr_w_i      ,
+        input                           penable_i   ,
+        input  [32-1:0]                 pwdata_i    ,
+        input  [32-1:0]                 paddr_i     ,
+        input                           psel_i      ,
+        output reg [32-1:0]             prdata_o    ,
+        output reg                      p_error_o   ,
+        output reg                      p_ready_o   ,
 
         // UART Interface
-        output       [4-1:0]        uart_tx_o   , 
-
-        // Router Interface
-        input  logic [31:0]         data_in     ,   
-        input  logic                req_i       ,       // data_in is valid and can be processed
-        output logic                ack_o               // router has accepted the packet 
-
+        output       [4-1:0]            uart_tx_o   
     );
 
     // LOCAL PARAMETERS ==========================================================
@@ -79,7 +73,7 @@
     // Internal Registers and Wires ==========================================================
 
 
-    reg [7:0] memory [0:5]; 
+    reg [32-1:0] memory [0:5]; 
 
 
     // Momory Map
@@ -88,10 +82,13 @@
 
 
     //0x01 - UART Clock Divider Register 
-    //0x02 - 
+    //0x02 - Packet to be transmitted (write-only, triggers transmission on write)
     //0x03 - Packet Counter Register (Read Only)
     //0x04 - Packet Skipped Counter Register (Read Only)
     //0x05 - Status Register  (Read Only)       x00 - x01 - first fiffo (full, empty, has data) 
+    //                                                      01 - EMPTY
+    //                                                      10 - FULL
+    //                                                      00 - HAS DATA    
     //                                          x02 - x03 - second fifo  
     //                                          x04 - x05 - third fifo 
     //                                          x06 - x07 - fourth fifo  (Read Only)
@@ -124,6 +121,7 @@
 
 
     reg baud_changed;
+    reg packet_arrived; // Flag to indicate that a packet received via APB
 
     packet_t pkt;
 
@@ -137,17 +135,13 @@
     //  - APB Write
     always @(posedge clk_i or negedge rst_n_i) begin
         if (!rst_n_i) begin
-            memory[0] <= 8'h00;
-            memory[1] <= 8'h00;
-            memory[2] <= 8'h00;
-            baud_changed <= 1'b0;
-        end else begin
-            baud_changed <= 1'b0;                      
+            memory[0] <= 32'h0000_0000;
+            memory[1] <= 32'h0000_0100;
+            memory[2] <= 32'h0000_0000;
+        end else begin                     
             if (psel_i && penable_i && pr_w_i) begin
                 if (paddr_i < 3) begin
-                    memory[paddr_i] <= pwdata_i;
-                    if (paddr_i == 1)
-                        baud_changed <= 1'b1;          
+                    memory[paddr_i] <= pwdata_i;        
                 end
             end
         end
@@ -161,7 +155,7 @@
             if (paddr_i < APB_MEMORY_SIZE)
                 prdata_o <= memory[paddr_i];
             else
-                prdata_o <= 8'h00;
+                prdata_o <= 32'h0000_0000;
         end
     end
 
@@ -185,12 +179,30 @@
             p_ready_o <= 1'b0;
     end
 
+
+    // - APB Write to baud register (for UART configuration)
+    always @(posedge clk_i or negedge rst_n_i) 
+        if (!rst_n_i) baud_changed <= 1'b0; else
+            if (psel_i && penable_i && pr_w_i && paddr_i == 1)
+                baud_changed <= 1'b1; else
+                baud_changed <= 1'b0;
+
+
+    //Packet arrival detection
+    always @(posedge clk_i or negedge rst_n_i)
+        if (!rst_n_i) packet_arrived <= 1'b0; else
+            if (psel_i && penable_i && pr_w_i && paddr_i == 2)
+                packet_arrived <= 1'b1; else
+                packet_arrived <= 1'b0;
+
+
     // APB PROTOCOL IMPLEMENTATION END =========================================================
 
 
     // Packet Parser START=========================================================
 
 
+    // 
     always @(posedge clk_i or negedge rst_n_i) begin
         if (!rst_n_i) begin
             fifo_wr_en  <= '0;
@@ -198,13 +210,12 @@
         end else begin
             fifo_wr_en <= '0;                          
 
-            if (req_i && !ack_o) begin                  
-                pkt = data_in;                         // no "packet_t pkt;" here
-
+            if (packet_arrived) begin                  
+                pkt = memory[2];                        
                 if (pkt.dest_addr < 4) begin
                     if (!fifo_full[pkt.dest_addr]) begin
                         fifo_wr_en[pkt.dest_addr]   <= 1'b1;
-                        fifo_wr_data[pkt.dest_addr] <= data_in;
+                        fifo_wr_data[pkt.dest_addr] <= pkt;
                     end
                 end
             end
@@ -215,8 +226,8 @@
     always @(posedge clk_i or negedge rst_n_i) begin
         if (!rst_n_i) begin
             memory[4] <= 8'h00; 
-        end else if (req_i && !ack_o) begin              
-            pkt = data_in;                              // no declaration, just assign
+        end else if (packet_arrived) begin              
+            pkt = memory[2];                              // no declaration, just assign
             if (pkt.dest_addr >= 4) begin
                 memory[4] <= memory[4] + 1;
             end else if (fifo_full[pkt.dest_addr]) begin
@@ -230,24 +241,11 @@
     always @(posedge clk_i or negedge rst_n_i) begin
         if (!rst_n_i) begin
             memory[3] <= 8'h00; 
-        end else if (ack_o) begin
+        end else if (packet_arrived) begin
             memory[3] <= memory[3] + 1; // Increment packet counter on successful acknowledgment
         end
     end
 
-
-
-
-    // ack_o 
-    always @(posedge clk_i or negedge rst_n_i) begin
-        if (!rst_n_i) begin
-            ack_o <= 1'b0;
-        end else if (req_i && !ack_o) begin
-            ack_o <= 1'b1; 
-        end else begin
-            ack_o <= 1'b0; 
-        end
-    end
 
     genvar i;
     generate
@@ -272,7 +270,7 @@
 
                         TX_IDLE: begin
                             if (!cfg_done[i]) begin
-                                uart_data[i]    <= {29'b0, memory[1][2:0]};
+                                uart_data[i]    <= {29'b0, memory[1][8-1:0]};
                                 uart_addr[i]    <= 4'd1;
                                 uart_req[i]     <= 1'b1;
                                 tx_state[i]     <= TX_CFG_BAUD;
@@ -431,9 +429,6 @@
         .tx_o       (uart_tx_o[3]         ),
         .ack_o      (uart_ack[3]          )
     );
-
-
-
 
 
     endmodule
