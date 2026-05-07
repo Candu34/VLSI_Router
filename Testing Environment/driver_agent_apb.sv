@@ -42,7 +42,7 @@ class driver_agent_apb extends uvm_driver #(tranzactie_apb);
   task initializare_semnale();
     interfata_driverului_pentru_apb.driver_cb.psel    <= 1'b0;
     interfata_driverului_pentru_apb.driver_cb.penable <= 1'b0;
-    interfata_driverului_pentru_apb.driver_cb.pr_w    <= 1'b0;
+    interfata_driverului_pentru_apb.driver_cb.pwrite    <= 1'b0;
     interfata_driverului_pentru_apb.driver_cb.paddr   <= 8'h00;
     interfata_driverului_pentru_apb.driver_cb.pwdata  <= 8'h00;
   endtask
@@ -54,7 +54,7 @@ class driver_agent_apb extends uvm_driver #(tranzactie_apb);
     @(interfata_driverului_pentru_apb.driver_cb);
     interfata_driverului_pentru_apb.driver_cb.psel    <= 1'b1;
     interfata_driverului_pentru_apb.driver_cb.penable <= 1'b0;
-    interfata_driverului_pentru_apb.driver_cb.pr_w    <= informatia_de_transmis.write;
+    interfata_driverului_pentru_apb.driver_cb.pwrite    <= informatia_de_transmis.write;
     interfata_driverului_pentru_apb.driver_cb.paddr   <= informatia_de_transmis.addr;
     interfata_driverului_pentru_apb.driver_cb.pwdata  <= informatia_de_transmis.wdata;
 
@@ -88,7 +88,7 @@ class driver_agent_apb extends uvm_driver #(tranzactie_apb);
     @(interfata_driverului_pentru_apb.driver_cb);
     interfata_driverului_pentru_apb.driver_cb.psel    <= 1'b0;
     interfata_driverului_pentru_apb.driver_cb.penable <= 1'b0;
-    interfata_driverului_pentru_apb.driver_cb.pr_w    <= 1'b0;
+    interfata_driverului_pentru_apb.driver_cb.pwrite    <= 1'b0;
     interfata_driverului_pentru_apb.driver_cb.paddr   <= 8'h00;
     interfata_driverului_pentru_apb.driver_cb.pwdata  <= 8'h00;
 

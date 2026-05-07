@@ -9,7 +9,7 @@ interface apb_interface_dut;
   // APB – semnale de la master (input în DUT)
   logic        psel;
   logic        penable;
-  logic        pr_w;          // 1 = write, 0 = read
+  logic        pwrite;          // 1 = write, 0 = read
   logic [7:0]  paddr;
   logic [7:0]  pwdata;
 
@@ -29,7 +29,7 @@ interface apb_interface_dut;
     default input #1step output #1;
     output psel;
     output penable;
-    output pr_w;
+    output pwrite;
     output paddr;
     output pwdata;
     input  prdata;
@@ -41,7 +41,7 @@ interface apb_interface_dut;
     default input #1step;
     input psel;
     input penable;
-    input pr_w;
+    input pwrite;
     input paddr;
     input pwdata;
     input prdata;
@@ -76,14 +76,14 @@ interface apb_interface_dut;
   APB_PSEL_STABLE: assert property (apb_psel_stable_during_access)
     else `uvm_error("APB_INTF", "psel a cazut in timpul fazei ACCESS")
 
-  // paddr, pwdata, pr_w trebuie sa fie stabile in faza ACCESS
+  // paddr, pwdata, pwrite trebuie sa fie stabile in faza ACCESS
   property apb_signals_stable_in_access;
     @(posedge pclk) disable iff (!rst_n)
     (psel && penable) |->
-      ($stable(paddr) && $stable(pr_w) && (pr_w ? $stable(pwdata) : 1'b1));
+      ($stable(paddr) && $stable(pwrite) && (pwrite ? $stable(pwdata) : 1'b1));
   endproperty
   APB_SIGNALS_STABLE: assert property (apb_signals_stable_in_access)
-    else `uvm_error("APB_INTF", "paddr/pwdata/pr_w s-au schimbat in faza ACCESS")
+    else `uvm_error("APB_INTF", "paddr/pwdata/pwrite s-au schimbat in faza ACCESS")
 
   // p_error nu trebuie sa fie activ fara un transfer in curs
   property apb_error_only_during_transfer;
@@ -93,26 +93,26 @@ interface apb_interface_dut;
   APB_ERROR_VALID: assert property (apb_error_only_during_transfer)
     else `uvm_error("APB_INTF", "p_error activ fara transfer APB in curs")
 
-  // p_error trebuie ridicat la adrese invalide (>= 6 = APB_MEMORY_SIZE)
+  // p_error trebuie ridicat la adrese invalide (> 6 = APB_MEMORY_SIZE)
   property apb_error_on_invalid_addr;
     @(posedge pclk) disable iff (!rst_n)
-    (psel && penable && (paddr >= 8'd6)) |-> p_error;
-  endproperty
+    (psel && !penable && (paddr >= 8'd6)) |=> p_error;
+endproperty
   APB_ERROR_INVALID_ADDR: assert property (apb_error_on_invalid_addr)
     else `uvm_error("APB_INTF", "p_error nu a fost ridicat pentru adresa invalida")
 
-  // Scriere in registri read-only (adrese 3, 4, 5) trebuie sa genereze p_error
+      // Scriere in registri read-only (adrese 3, 4, 5, 6) trebuie sa genereze p_error
   property apb_error_on_ro_write;
     @(posedge pclk) disable iff (!rst_n)
-    (psel && penable && pr_w && (paddr >= 8'd3) && (paddr < 8'd6)) |-> p_error;
-  endproperty
+    (psel && !penable && pwrite && (paddr >= 8'd3)) |=> p_error;
+endproperty
   APB_ERROR_RO_WRITE: assert property (apb_error_on_ro_write)
     else `uvm_error("APB_INTF", "p_error nu a fost ridicat la scriere in registru read-only")
 
   // prdata nu trebuie sa se schimbe in timpul unui transfer de scriere
   property apb_prdata_stable_on_write;
     @(posedge pclk) disable iff (!rst_n)
-    (psel && penable && pr_w) |-> $stable(prdata);
+    (psel && penable && pwrite) |-> $stable(prdata);
   endproperty
   APB_PRDATA_STABLE_WR: assert property (apb_prdata_stable_on_write)
     else `uvm_error("APB_INTF", "prdata s-a schimbat in timpul unui transfer de scriere")
@@ -135,7 +135,7 @@ interface apb_interface_dut;
 
   property apb_no_x_on_prdata;
     @(posedge pclk) disable iff (!rst_n)
-    (psel && penable && !pr_w) |=> !$isunknown(prdata);
+    (psel && penable && !pwrite) |=> !$isunknown(prdata);
   endproperty
   APB_NO_X_PRDATA: assert property (apb_no_x_on_prdata)
     else `uvm_warning("APB_INTF", "prdata este X dupa un transfer de citire")

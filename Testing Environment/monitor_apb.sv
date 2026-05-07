@@ -53,7 +53,7 @@ class monitor_apb extends uvm_monitor;
           interfata_monitor_apb.monitor_cb.penable) begin
 
         // preluare semnale din clocking block (evitam race condition)
-        starea_preluata_a_apb.write = interfata_monitor_apb.monitor_cb.pr_w;
+        starea_preluata_a_apb.write = interfata_monitor_apb.monitor_cb.pwrite;
         starea_preluata_a_apb.addr  = interfata_monitor_apb.monitor_cb.paddr;
         starea_preluata_a_apb.wdata = interfata_monitor_apb.monitor_cb.pwdata;
         starea_preluata_a_apb.rdata = interfata_monitor_apb.monitor_cb.prdata;
