@@ -28,7 +28,7 @@
         input  [32-1:0]                 paddr_i     ,
         input                           psel_i      ,
         output reg [32-1:0]             prdata_o    ,
-        output reg                      p_error_o   ,
+        output reg                      p_error_o   , // 1 if address more than 5 or write to read-only register (0x03-0x07)
         output reg                      p_ready_o   ,
 
         // UART Interface
@@ -73,7 +73,7 @@
     // Internal Registers and Wires ==========================================================
 
 
-    reg [32-1:0] memory [0:5]; 
+    reg [32-1:0] memory [0:APB_MEMORY_SIZE]; 
 
 
     // Momory Map
@@ -163,7 +163,7 @@
     always @(posedge clk_i or negedge rst_n_i) begin
         if (!rst_n_i)
             p_error_o <= 1'b0;
-        else if (psel_i && !penable_i && (paddr_i >= APB_MEMORY_SIZE) && (pr_w_i && (paddr_i >= 3))) // Set error for invalid address or write to read-only register
+        else if (psel_i && !penable_i && (paddr_i > APB_MEMORY_SIZE - 1) | (pr_w_i && (paddr_i >= 3))) // Set error for invalid address or write to read-only register
             p_error_o <= 1'b1;
         else
             p_error_o <= 1'b0;

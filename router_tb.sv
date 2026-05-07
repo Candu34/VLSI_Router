@@ -79,6 +79,10 @@ module router_tb();
         @(posedge clk_i);
         @(posedge clk_i);
 
+        apb_write(32'h7, 32'hDEAD_BEEF); // Write to invalid address
+        repeat (4) @(posedge clk_i);
+        apb_write(32'h3, 32'h1234_5678); // Write to read-only register
+        repeat (4) @(posedge clk_i);
 
         //1. Configure Baud Rate (Address 1)
         apb_write(32'h1, 32'd3);
