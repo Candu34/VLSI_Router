@@ -37,7 +37,7 @@
 
     // LOCAL PARAMETERS ==========================================================
 
-    localparam APB_MEMORY_SIZE  = 6; // 6 bytes of memory for APB registers
+    localparam APB_MEMORY_SIZE  = 7; // 7 bytes of memory for APB registers
     localparam NUM_FIFOS        = 4; // Number of fifo memories (ports * packets priority levels)
     localparam FIFO_SIZE        = 8; // Size of each FIFO in terms of number of packets
     localparam FIFO_WIDTH       = 32; // Width of each FIFO entry 
@@ -73,7 +73,7 @@
     // Internal Registers and Wires ==========================================================
 
 
-    reg [32-1:0] memory [0:APB_MEMORY_SIZE]; 
+    reg [32-1:0] memory [0:APB_MEMORY_SIZE - 1]; 
 
 
     // Momory Map
@@ -163,7 +163,7 @@
     always @(posedge clk_i or negedge rst_n_i) begin
         if (!rst_n_i)
             p_error_o <= 1'b0;
-        else if (psel_i && !penable_i && (paddr_i > APB_MEMORY_SIZE - 1) | (pr_w_i && (paddr_i >= 3))) // Set error for invalid address or write to read-only register
+        else if (psel_i && !penable_i && ((paddr_i > APB_MEMORY_SIZE - 1) || (pr_w_i && (paddr_i >= 3)))) // Set error for invalid address or write to read-only register
             p_error_o <= 1'b1;
         else
             p_error_o <= 1'b0;
